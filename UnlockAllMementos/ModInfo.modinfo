@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="unlock-all-mementos"
+     version="1"
+     xmlns="ModInfo">
+
+  <Properties>
+    <Name>LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE</Name>
+    <Description>LOC_UNLOCK_ALL_MEMENTOS_MOD_DESCRIPTION</Description>
+    <Authors>Custom</Authors>
+    <Package>Mod</Package>
+    <AffectsSavedGames>false</AffectsSavedGames>
+    <CompatibleVersions>1.0</CompatibleVersions>
+  </Properties>
+
+  <Dependencies>
+    <Mod id="base-standard" title="LOC_MODULE_BASE_STANDARD_NAME" />
+  </Dependencies>
+
+  <ActionGroups>
+    <ActionGroup id="unlock-all-mementos" scope="shell" criteria="always">
+      <Properties>
+        <LoadOrder>10</LoadOrder>
+      </Properties>
+      <Actions>
+        <UpdateDatabase>
+          <Item>config/unlockMementos.sql</Item>
+        </UpdateDatabase>
+        <UpdateText>
+          <Item>text/ModText.xml</Item>
+        </UpdateText>
+      </Actions>
+    </ActionGroup>
+  </ActionGroups>
+
+</Mod>

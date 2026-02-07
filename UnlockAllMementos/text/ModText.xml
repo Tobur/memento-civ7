@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GameData>
+  <LocalizedText>
+    <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE" Language="en_US">
+      <Text>Unlock All Mementos</Text>
+    </Replace>
+    <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_DESCRIPTION" Language="en_US">
+      <Text>Unlocks all mementos and both memento slots, allowing full selection during game setup regardless of progression level.</Text>
+    </Replace>
+  </LocalizedText>
+</GameData>
