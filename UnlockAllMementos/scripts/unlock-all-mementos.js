@@ -1,39 +1,79 @@
-// Unlock All Mementos v2 - JS runtime patch
-// Forces every memento to DISPLAY_UNLOCKED so the create-game memento
-// selector shows all entries as selectable, regardless of player
-// progression (Foundation level, leader level, etc). Slot gating
-// (Foundation Path levels) is left untouched.
+// Unlock All Mementos - runtime patch
 //
 // Strategy:
-//   1) Wait for `Online.Metaprogression` to exist (it is initialised
-//      after the online subsystem boots).
-//   2) Wrap `getMementosData()` so every memento record's
-//      `displayType` is `DisplayType.DISPLAY_UNLOCKED` and
-//      `unlockTitle`/`unlockReason` are cleared.
-//   3) Wrap `supportsMemento` to always return true (defensive — the
-//      engine may query this on equip).
+//   Hook into the Online.Metaprogression API used by the create-game
+//   memento selector. Force every memento and slot record to report
+//   `displayType = DISPLAY_UNLOCKED` so the UI lets the player pick
+//   any memento regardless of progression state.
 //
-// DB-side: `config/unlockMementos.sql` also strips memento rows from
-// UnlockableRewards so engine domain.possibleValues is widened.
+// Diagnostics:
+//   Because Civ VII does not pipe `console.*` calls to disk, this
+//   script also writes a JSON diagnostics blob to `localStorage`
+//   under the `__unlockAllMementos_diag` key after each patch
+//   attempt. The keys / values can be inspected via
+//   `~/Library/Application Support/Civilization VII/LocalStorage.sqlite`:
+//
+//     sqlite3 LocalStorage.sqlite 'SELECT value FROM "Values" \
+//       WHERE key = "modSettings";'
+//
+//   (Civ stores everything under the `modSettings` key.)
 
 (function applyUnlockAllMementos() {
     const TAG = '[UnlockAllMementos]';
+    const diag = {
+        startedAt: Date.now(),
+        attempts: 0,
+        onlineSeen: false,
+        metaprogressionSeen: false,
+        patched: false,
+        patchedAt: null,
+        displayTypeResolved: null,
+        wrappedFunctions: [],
+        errors: []
+    };
+
+    function persistDiag() {
+        try {
+            const raw = localStorage.getItem('modSettings') || '{}';
+            const all = JSON.parse(raw);
+            all.__unlockAllMementos_diag = diag;
+            localStorage.setItem('modSettings', JSON.stringify(all));
+        } catch (e) {
+            // ignore — localStorage might be unavailable in some scopes
+        }
+    }
 
     function patchMetaprogression() {
-        if (typeof Online === 'undefined' || !Online.Metaprogression) {
+        diag.attempts++;
+
+        if (typeof Online === 'undefined') {
+            persistDiag();
             return false;
         }
+        diag.onlineSeen = true;
+
+        if (!Online.Metaprogression) {
+            persistDiag();
+            return false;
+        }
+        diag.metaprogressionSeen = true;
+
         const mp = Online.Metaprogression;
         if (mp.__unlockAllMementosPatched) {
             return true;
         }
 
-        // Resolve DisplayType.DISPLAY_UNLOCKED — DisplayType is a
-        // global enum; fall back to numeric 1 if name lookup fails.
-        const unlockedValue =
-            (typeof DisplayType !== 'undefined' && DisplayType.DISPLAY_UNLOCKED)
-                ? DisplayType.DISPLAY_UNLOCKED
-                : 1;
+        // Resolve DISPLAY_UNLOCKED enum value. The native binding
+        // exposes `DisplayType` as a global object with numeric keys.
+        let unlockedValue = null;
+        if (typeof DisplayType !== 'undefined' && DisplayType !== null) {
+            unlockedValue = DisplayType.DISPLAY_UNLOCKED;
+        }
+        if (unlockedValue === null || unlockedValue === undefined) {
+            // Common enum order in Civ VII: HIDDEN=0, UNLOCKED=1, LOCKED=2
+            unlockedValue = 1;
+        }
+        diag.displayTypeResolved = unlockedValue;
 
         const force = (rec) => {
             if (!rec || typeof rec !== 'object') return rec;
@@ -42,8 +82,9 @@
                 rec.unlockTitle = '';
                 rec.unlockReason = '';
                 rec.isNewAndUnseenByPlayer = false;
+                return rec;
             } catch (e) {
-                // Object may be frozen — return a clone.
+                // Frozen object — return shallow clone with overrides
                 return Object.assign({}, rec, {
                     displayType: unlockedValue,
                     unlockTitle: '',
@@ -51,43 +92,91 @@
                     isNewAndUnseenByPlayer: false
                 });
             }
-            return rec;
         };
 
-        if (typeof mp.getMementosData === 'function') {
-            const orig = mp.getMementosData.bind(mp);
-            mp.getMementosData = function () {
-                const data = orig();
-                if (!Array.isArray(data)) return data;
-                return data.map(force);
-            };
-        }
+        const wrap = (name) => {
+            if (typeof mp[name] !== 'function') return;
+            const orig = mp[name].bind(mp);
+            try {
+                mp[name] = function () {
+                    let result;
+                    try {
+                        result = orig.apply(this, arguments);
+                    } catch (e) {
+                        diag.errors.push(`${name} threw: ${e && e.message}`);
+                        return result;
+                    }
+                    if (Array.isArray(result)) {
+                        return result.map(force);
+                    }
+                    return result;
+                };
+                diag.wrappedFunctions.push(name);
+            } catch (e) {
+                diag.errors.push(`failed to wrap ${name}: ${e && e.message}`);
+            }
+        };
 
+        wrap('getMementosData');
+
+        // Also relax supportsMemento — defensive in case engine calls
+        // it on equip to verify ownership.
         if (typeof mp.supportsMemento === 'function') {
-            const orig = mp.supportsMemento.bind(mp);
-            mp.supportsMemento = function () {
-                try { orig.apply(mp, arguments); } catch (e) { /* swallow */ }
-                return true;
-            };
+            const origSupports = mp.supportsMemento.bind(mp);
+            try {
+                mp.supportsMemento = function () {
+                    try { origSupports.apply(this, arguments); } catch (_) {}
+                    return true;
+                };
+                diag.wrappedFunctions.push('supportsMemento');
+            } catch (e) {
+                diag.errors.push(`failed to wrap supportsMemento: ${e && e.message}`);
+            }
         }
 
         mp.__unlockAllMementosPatched = true;
-        console.log(`${TAG} patched Online.Metaprogression`);
+        diag.patched = true;
+        diag.patchedAt = Date.now();
+        persistDiag();
+        console.log(`${TAG} patched ${diag.wrappedFunctions.join(', ')}`);
         return true;
     }
 
+    persistDiag();
     if (patchMetaprogression()) return;
 
-    // Online subsystem not ready yet — retry on a short interval.
+    // Retry while engine subsystems boot. 50 ms × 400 = 20 s window.
     let attempts = 0;
-    const maxAttempts = 200; // ~10s at 50ms
+    const maxAttempts = 400;
     const handle = setInterval(() => {
         attempts++;
-        if (patchMetaprogression() || attempts >= maxAttempts) {
-            clearInterval(handle);
-            if (attempts >= maxAttempts) {
-                console.warn(`${TAG} gave up after ${attempts} attempts`);
+        try {
+            if (patchMetaprogression() || attempts >= maxAttempts) {
+                clearInterval(handle);
+                if (attempts >= maxAttempts) {
+                    diag.errors.push(`gave up after ${attempts} attempts`);
+                    persistDiag();
+                    console.warn(`${TAG} gave up after ${attempts} attempts`);
+                }
             }
+        } catch (e) {
+            diag.errors.push(`interval tick: ${e && e.message}`);
+            persistDiag();
         }
     }, 50);
+
+    // Also hook DNAUserProfileCacheReady — the canonical event for
+    // metaprogression data becoming available.
+    try {
+        if (typeof engine !== 'undefined' && typeof engine.on === 'function') {
+            engine.on('DNAUserProfileCacheReady', () => {
+                if (patchMetaprogression()) {
+                    clearInterval(handle);
+                }
+            });
+        }
+    } catch (e) {
+        diag.errors.push(`engine.on hook: ${e && e.message}`);
+        persistDiag();
+    }
 })();

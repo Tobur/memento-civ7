@@ -1,12 +1,16 @@
 -- Unlock All Mementos mod
--- Removes the unlock-gating rows for every memento from the
--- frontend `Rewards` table (loaded from
--- base-standard/config/unlockableRewards.xml). Slot gating
--- (UNLOCKABLEREWARD_TYPE_SLOT rows) is intentionally left in place.
+-- NOTE: An earlier SQL approach (DELETE FROM Rewards WHERE
+-- Type='UNLOCKABLEREWARD_TYPE_MEMENTO') turned every memento grey —
+-- the `Rewards` table is the catalog of awardable items, not a gate.
+-- Removing rows tells the game those mementos do not exist as
+-- rewards at all, so they cannot be selected.
 --
--- Table name = the XML child element of <Database>, NOT the xmlns
--- attribute. The original mod (claude-jkc/memento-civ7) referenced
--- "UnlockableRewards" which does not exist as a SQL table — Civ VII
--- loads it under the name `Rewards`, matching the <Rewards> element.
+-- Unlock state is determined elsewhere (DNA blob / Online
+-- Metaprogression earned-rewards list). The mod now relies solely
+-- on the JS runtime patch in scripts/unlock-all-mementos.js to
+-- mark every memento as DISPLAY_UNLOCKED.
+--
+-- This file is kept as a no-op so the UpdateDatabase action still
+-- has something to load.
 
-DELETE FROM Rewards WHERE Type = 'UNLOCKABLEREWARD_TYPE_MEMENTO';
+SELECT 1;
