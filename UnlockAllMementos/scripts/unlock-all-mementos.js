@@ -176,12 +176,20 @@
                                     for (const m of allMementos) {
                                         const typeId = m && m.mementoTypeId;
                                         if (!typeId || existing.has(typeId.toString())) continue;
+                                        // mementos.xml convention: Name="LOC_<TYPE>_NAME"
+                                        // Description="LOC_<TYPE>_DESCRIPTION". Use LOC keys here so
+                                        // Locale.stylize / GameSetup.resolveString can render them.
+                                        const locName = 'LOC_' + typeId + '_NAME';
+                                        const locDesc = 'LOC_' + typeId + '_DESCRIPTION';
+                                        const locFunc = 'LOC_' + typeId + '_FUNCTIONAL_DESCRIPTION';
                                         param.domain.possibleValues.push({
                                             value: typeId,
-                                            name: m.mementoName || template.name,
-                                            description: m.flavorTextDesc || template.description,
+                                            name: locName,
+                                            description: locDesc,
                                             icon: m.icon || template.icon,
-                                            additionalProperties: template.additionalProperties || [],
+                                            additionalProperties: [
+                                                { name: 'FunctionalDescription', value: locFunc }
+                                            ],
                                             invalidReason: 0 // 0 = Valid in GameSetupDomainValueInvalidReason
                                         });
                                         added++;
