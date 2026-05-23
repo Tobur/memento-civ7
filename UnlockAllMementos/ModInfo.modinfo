@@ -1,25 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Mod id="unlock-all-mementos"
-     version="1"
+     version="2"
      xmlns="ModInfo">
 
   <Properties>
     <Name>LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE</Name>
     <Description>LOC_UNLOCK_ALL_MEMENTOS_MOD_DESCRIPTION</Description>
-    <Authors>Custom</Authors>
+    <Authors>Tobur (fork of claude-jkc)</Authors>
     <Package>Mod</Package>
-    <AffectsSavedGames>false</AffectsSavedGames>
-    <CompatibleVersions>1.0</CompatibleVersions>
+    <AffectsSavedGames>0</AffectsSavedGames>
+    <Version>2.0.0</Version>
+    <CompatibleVersions>1.4</CompatibleVersions>
+    <URL>https://github.com/Tobur/memento-civ7</URL>
   </Properties>
 
   <Dependencies>
     <Mod id="base-standard" title="LOC_MODULE_BASE_STANDARD_NAME" />
   </Dependencies>
 
+  <References>
+    <Mod id="core" title="LOC_MODULE_CORE_NAME"/>
+  </References>
+
+  <ActionCriteria>
+    <Criteria id="always">
+      <AlwaysMet></AlwaysMet>
+    </Criteria>
+  </ActionCriteria>
+
   <ActionGroups>
-    <ActionGroup id="unlock-all-mementos" scope="shell" criteria="always">
+    <ActionGroup id="unlock-all-mementos-db" scope="shell" criteria="always">
       <Properties>
-        <LoadOrder>10</LoadOrder>
+        <LoadOrder>500</LoadOrder>
       </Properties>
       <Actions>
         <UpdateDatabase>
@@ -28,6 +40,28 @@
         <UpdateText>
           <Item>text/ModText.xml</Item>
         </UpdateText>
+      </Actions>
+    </ActionGroup>
+
+    <ActionGroup id="unlock-all-mementos-ui-shell" scope="shell" criteria="always">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <Actions>
+        <UIScripts>
+          <Item>scripts/unlock-all-mementos.js</Item>
+        </UIScripts>
+      </Actions>
+    </ActionGroup>
+
+    <ActionGroup id="unlock-all-mementos-ui-game" scope="game" criteria="always">
+      <Properties>
+        <LoadOrder>500</LoadOrder>
+      </Properties>
+      <Actions>
+        <UIScripts>
+          <Item>scripts/unlock-all-mementos.js</Item>
+        </UIScripts>
       </Actions>
     </ActionGroup>
   </ActionGroups>

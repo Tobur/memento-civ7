@@ -2,10 +2,16 @@
 <GameData>
   <LocalizedText>
     <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE" Language="en_US">
-      <Text>Unlock All Mementos</Text>
+      <Text>Unlock All Mementos (1.4 fork)</Text>
     </Replace>
     <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_DESCRIPTION" Language="en_US">
-      <Text>Unlocks all mementos and both memento slots, allowing full selection during game setup regardless of progression level.</Text>
+      <Text>Unlocks all mementos and both memento slots for game setup. Combines a DB strip of UnlockableRewards entries with a runtime patch of Online.Metaprogression so every memento and slot is reported as DISPLAY_UNLOCKED. Fork of claude-jkc/memento-civ7, updated for Civ VII 1.4.</Text>
+    </Replace>
+    <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE" Language="ru_RU">
+      <Text>Разблокировка всех мементо (форк 1.4)</Text>
+    </Replace>
+    <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_DESCRIPTION" Language="ru_RU">
+      <Text>Открывает все мементосы и оба слота в настройках игры. Сочетает очистку таблицы UnlockableRewards с патчем Online.Metaprogression во время выполнения. Форк claude-jkc/memento-civ7, обновлён под Civ VII 1.4.</Text>
     </Replace>
   </LocalizedText>
 </GameData>
