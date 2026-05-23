@@ -1,19 +1,20 @@
 // Unlock All Mementos v2 - JS runtime patch
-// Forces every memento and slot to DISPLAY_UNLOCKED so the create-game
-// memento selector shows all entries as selectable, regardless of
-// player progression (Foundation level, leader level, etc).
+// Forces every memento to DISPLAY_UNLOCKED so the create-game memento
+// selector shows all entries as selectable, regardless of player
+// progression (Foundation level, leader level, etc). Slot gating
+// (Foundation Path levels) is left untouched.
 //
 // Strategy:
 //   1) Wait for `Online.Metaprogression` to exist (it is initialised
 //      after the online subsystem boots).
-//   2) Wrap `getMementosData()` and `getMementoSlotData()` so every
-//      record's `displayType` is `DisplayType.DISPLAY_UNLOCKED` and
+//   2) Wrap `getMementosData()` so every memento record's
+//      `displayType` is `DisplayType.DISPLAY_UNLOCKED` and
 //      `unlockTitle`/`unlockReason` are cleared.
 //   3) Wrap `supportsMemento` to always return true (defensive — the
 //      engine may query this on equip).
 //
-// DB-side: `config/unlockMementos.sql` also strips
-// UnlockableRewards rows so engine domain.possibleValues is widened.
+// DB-side: `config/unlockMementos.sql` also strips memento rows from
+// UnlockableRewards so engine domain.possibleValues is widened.
 
 (function applyUnlockAllMementos() {
     const TAG = '[UnlockAllMementos]';
@@ -56,15 +57,6 @@
         if (typeof mp.getMementosData === 'function') {
             const orig = mp.getMementosData.bind(mp);
             mp.getMementosData = function () {
-                const data = orig();
-                if (!Array.isArray(data)) return data;
-                return data.map(force);
-            };
-        }
-
-        if (typeof mp.getMementoSlotData === 'function') {
-            const orig = mp.getMementoSlotData.bind(mp);
-            mp.getMementoSlotData = function () {
                 const data = orig();
                 if (!Array.isArray(data)) return data;
                 return data.map(force);
