@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<GameData>
+<Database>
   <LocalizedText>
     <Replace Tag="LOC_UNLOCK_ALL_MEMENTOS_MOD_TITLE" Language="en_US">
       <Text>Unlock All Mementos (1.4 fork)</Text>
@@ -14,4 +14,4 @@
       <Text>Открывает все мементосы в настройках игры. Слоты (через уровни Foundation Path) не трогает. Сочетает очистку строк мементо в UnlockableRewards с патчем Online.Metaprogression во время выполнения. Форк claude-jkc/memento-civ7, обновлён под Civ VII 1.4.</Text>
     </Replace>
   </LocalizedText>
-</GameData>
+</Database>
